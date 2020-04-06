@@ -35,8 +35,8 @@ type trojanHeaders struct {
 
 // TODO: can we re-use some existing types here?
 type trojanMessage struct {
-	length  []byte
-	topic   []byte
+	length  []byte // this should be 2 bytes, not 8
+	topic   []byte // redefine this as a type, alias for byte slice, init func which takes a string
 	payload []byte
 	padding []byte
 }
@@ -50,6 +50,17 @@ type trojanChunk struct {
 	address chunk.Address
 	trojanData
 }
+
+// new struct: trojan message
+// the iterate nonce func should take the trojan message payload serialization
+// internally we use nonce and serialization
+// new trojan chunk, takes topic and payload and take it directly from the api
+// already in the constructor it will set the length and padding
+// and calling on the iterator, take the byte slice, try a nonce, calculate the span
+// gives back: it might even give you back the chunk.Chunk type
+
+// setting the span: 4K written as an 8 byte binary little-endian (use the `put` from binary package)
+// same one for all the iterations
 
 // newTrojanChunk creates a new trojan chunk structure for the given address and message
 func newTrojanChunk(address chunk.Address, message trojanMessage) (*trojanChunk, error) {
@@ -115,6 +126,20 @@ func iterateNonce(tc *trojanChunk, hashFunc storage.SwarmHash) error {
 		// TODO: what is the correct way to check if hash is in the same neighbourhood as trojan chunk address?
 		_ = chunk.Proximity(tc.address, hash)
 
+		// we can give a list of 2 bytes prefixes
+		// check the first 2 bytes of the hash result
+		// from api call: take the length of the targets (complain if they are not all the same length)
+		// every iteration: when we get an address, byte compare the first 2 bytes to all the targets, if it matches
+		// one: yay. if not: re-roll
+		// 16 bits
+
+		// target bit vectors
+		// address generated → bit sequence as well
+		// check if it is a prefix: targets are 16 bits (arbitrary)
+		// if it's 17 bits, then compare it with the target
+
+		// so the target is a partial address
+
 		// TODO: replace placeholder condition
 		if true {
 			// if nonce found, stop loop
@@ -124,12 +149,14 @@ func iterateNonce(tc *trojanChunk, hashFunc storage.SwarmHash) error {
 			// TODO: find non sinful way of adding 1 to byte slice
 			// TODO: implement loop-around
 			nonceInt := new(big.Int).SetBytes(tc.nonce)
-			tc.nonce = nonceInt.Add(nonceInt, big.NewInt(1)).Bytes()
+			tc.nonce = nonceInt.Add(nonceInt, big.NewInt(1)).Bytes() // check what happens if this overflows the byte array
 		}
 	}
 
 	return nil
 }
+
+// we call sum function with a byte
 
 // toContentAddressedChunk creates a new addressed chunk structure with the given trojan message content serialized as its data
 func (tc *trojanChunk) toContentAddressedChunk() (chunk.Chunk, error) {
@@ -153,6 +180,9 @@ func (td *trojanData) equals(d *trojanData) bool {
 	}
 	return true
 }
+
+// we can scrap json serialization
+//
 
 // UnmarshalJSON serializes a trojanData struct
 // TODO: find a more elegant way of serializing trojan data
@@ -186,6 +216,8 @@ func (td *trojanData) UnmarshalJSON(data []byte) error {
 	td.trojanMessage = m
 	return nil
 }
+
+// let's use binary marshalling instead of json
 
 // UnmarshalJSON serializes a trojanMessage struct
 // TODO: find a more elegant way of serializing trojan messages

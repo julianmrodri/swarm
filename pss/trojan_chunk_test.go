@@ -27,6 +27,18 @@ import (
 	"github.com/ethersphere/swarm/chunk"
 )
 
+//// Write the following test:
+// if we define the api call, and define the chunk store call,
+// and make sure that we have some mock chunk store (look for it in the code)
+// and we set up in the test a tester which uses these,
+// the whole pss object will have a chunk store field,
+// 1 api call, `send`
+// check if what we send is put in the chunk store, when you call the send we get the chunk
+// check if serialized into trojan chunk
+// then we can check if we have the right topic
+// right length (padding)
+//
+
 // arbitrary address for tests
 var addr = chunk.Address{
 	57, 120, 209, 156, 38, 89, 19, 22, 129, 142,

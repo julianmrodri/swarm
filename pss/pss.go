@@ -631,6 +631,7 @@ func (p *Pss) SendSym(symkeyid string, topic message.Topic, msg []byte) error {
 	return p.send(psp.address, topic, msg, false, symkey)
 }
 
+// probably this one
 // Send a message using asymmetric encryption
 //
 // Fails if the key id does not match any in of the stored public keys
